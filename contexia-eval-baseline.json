@@ -1,0 +1,4 @@
+[
+  {"query": "Centinela DIAN discrepancias", "relevant": ["raw/stage11-openspec__changes__archive__2026-06-24-agentic-performance-management-phase4__reports__2026-06-21-slice2-deployment"]},
+  {"query": "registro de decisiones de despliegue del backend", "relevant": ["raw/stage11-openspec__changes__shadow-gl-real-data-ingestion__reports__2026-06-25-deployment"]}
+]

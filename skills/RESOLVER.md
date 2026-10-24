@@ -91,6 +91,31 @@ When multiple skills could match:
 4. Chaining is explicit in each skill's Phases section
 5. When in doubt, ask the user
 
+<!-- BEGIN generated: contexia-agents (scripts/generate_gbrain_skills.py) -->
+## Contexia agents (reference/routing only — regenerated, do not hand-edit)
+
+These point at Contexia's own agents (AGENTES.md is canonical; see design.md Decision 4).
+None of these invoke anything — actual calls go through the separate `contexia-agents`
+MCP server. Regenerate via `python scripts/generate_gbrain_skills.py` in `antigravity-app`
+whenever `AGENTES.md` changes.
+
+| Trigger | Skill |
+|---------|-------|
+| "centinela fiscal", "dónde está centinela fiscal" | `skills/contexia-agent-centinela-fiscal/SKILL.md` |
+| "pulso diario", "dónde está pulso diario" | `skills/contexia-agent-pulso-diario/SKILL.md` |
+| "radar predictivo", "dónde está radar predictivo" | `skills/contexia-agent-radar-predictivo/SKILL.md` |
+| "auditoría sombra", "dónde está auditoría sombra" | `skills/contexia-agent-auditor-a-sombra/SKILL.md` |
+| "taty", "dónde está taty" | `skills/contexia-agent-taty/SKILL.md` |
+| "content idea generator", "dónde está content idea generator" | `skills/contexia-agent-content-idea-generator/SKILL.md` |
+| "lead reply drafter", "dónde está lead reply drafter" | `skills/contexia-agent-lead-reply-drafter/SKILL.md` |
+| "sales closure drafter", "dónde está sales closure drafter" | `skills/contexia-agent-sales-closure-drafter/SKILL.md` |
+| "metrics analyzer", "dónde está metrics analyzer" | `skills/contexia-agent-metrics-analyzer/SKILL.md` |
+| "knowledge base", "dónde está knowledge base" | `skills/contexia-agent-knowledge-base/SKILL.md` |
+| "maestro orchestrator", "dónde está maestro orchestrator" | `skills/contexia-agent-maestro-orchestrator/SKILL.md` |
+| "approval queue", "dónde está approval queue" | `skills/contexia-agent-approval-queue/SKILL.md` |
+
+<!-- END generated: contexia-agents -->
+
 ## Conventions (cross-cutting)
 
 These apply to ALL brain-writing skills:
