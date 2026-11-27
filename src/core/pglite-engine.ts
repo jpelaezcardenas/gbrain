@@ -9,7 +9,7 @@ import { PGLITE_SCHEMA_SQL } from './pglite-schema.ts';
 import { acquireLock, releaseLock, type LockHandle } from './pglite-lock.ts';
 import type {
   Page, PageInput, PageFilters, PageType,
-  Chunk, ChunkInput,
+  Chunk, ChunkInput, StaleChunkRow,
   SearchResult, SearchOpts,
   Link, GraphNode, GraphPath,
   TimelineEntry, TimelineInput, TimelineOpts,
@@ -325,14 +325,41 @@ export class PGLiteEngine implements BrainEngine {
   }
 
   async getChunks(slug: string): Promise<Chunk[]> {
+    // Explicit column list: never ship the embedding vector (rowToChunk
+    // discards it anyway). getChunksWithEmbeddings() is the vector reader.
     const { rows } = await this.db.query(
-      `SELECT cc.* FROM content_chunks cc
+      `SELECT cc.id, cc.page_id, cc.chunk_index, cc.chunk_text, cc.chunk_source,
+              cc.model, cc.token_count, cc.embedded_at
+       FROM content_chunks cc
        JOIN pages p ON p.id = cc.page_id
        WHERE p.slug = $1
        ORDER BY cc.chunk_index`,
       [slug]
     );
     return (rows as Record<string, unknown>[]).map(r => rowToChunk(r));
+  }
+
+  async countStaleChunks(): Promise<number> {
+    const { rows } = await this.db.query(
+      `SELECT count(*)::int AS count
+         FROM content_chunks
+        WHERE embedding IS NULL`,
+    );
+    const count = (rows[0] as { count: number } | undefined)?.count ?? 0;
+    return Number(count);
+  }
+
+  async listStaleChunks(): Promise<StaleChunkRow[]> {
+    const { rows } = await this.db.query(
+      `SELECT p.slug, cc.chunk_index, cc.chunk_text, cc.chunk_source,
+              cc.model, cc.token_count
+         FROM content_chunks cc
+         JOIN pages p ON p.id = cc.page_id
+        WHERE cc.embedding IS NULL
+        ORDER BY p.id, cc.chunk_index
+        LIMIT 100000`,
+    );
+    return rows as unknown as StaleChunkRow[];
   }
 
   async deleteChunks(slug: string): Promise<void> {

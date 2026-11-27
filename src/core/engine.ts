@@ -1,6 +1,6 @@
 import type {
   Page, PageInput, PageFilters,
-  Chunk, ChunkInput,
+  Chunk, ChunkInput, StaleChunkRow,
   SearchResult, SearchOpts,
   Link, GraphNode, GraphPath,
   TimelineEntry, TimelineInput, TimelineOpts,
@@ -79,7 +79,29 @@ export interface BrainEngine {
 
   // Chunks
   upsertChunks(slug: string, chunks: ChunkInput[]): Promise<void>;
+  /**
+   * Chunk rows for a page WITHOUT the embedding vector (`embedding` is always
+   * null in the result). The vector column is ~20 KB per row as text, so it is
+   * not selected at all. Use getChunksWithEmbeddings() when vectors are needed.
+   */
   getChunks(slug: string): Promise<Chunk[]>;
+  /**
+   * Number of chunks where `embedding IS NULL`. Pre-flight short-circuit for
+   * `embed --stale`: a fully-embedded brain does no further reads after this
+   * single count (~50 bytes on the wire).
+   *
+   * Predicate is `embedding IS NULL`, not `embedded_at IS NULL`: when a
+   * chunk's text changes, upsertChunks NULLs the vector but COALESCE keeps
+   * the old embedded_at, so embedded_at alone would miss it.
+   */
+  countStaleChunks(): Promise<number>;
+  /**
+   * Every chunk where `embedding IS NULL`, with the metadata needed to call
+   * embedBatch + upsertChunks. The embedding column is omitted by design.
+   * Ordered by page then chunk_index; bounded by an internal LIMIT of 100000
+   * to mirror listPages.
+   */
+  listStaleChunks(): Promise<StaleChunkRow[]>;
   deleteChunks(slug: string): Promise<void>;
 
   // Links
