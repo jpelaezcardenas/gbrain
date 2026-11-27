@@ -45,6 +45,22 @@ export interface Chunk {
   embedded_at: Date | null;
 }
 
+/**
+ * Metadata-only row for a chunk that still needs an embedding, as returned by
+ * `BrainEngine.listStaleChunks()`. Carries just enough to call embedBatch and
+ * re-upsert; the `embedding` column is deliberately absent (it is NULL on
+ * stale rows, so shipping it would only cost wire bytes).
+ * Backport of upstream gbrain v0.22.1 (`embed --stale` egress fix).
+ */
+export interface StaleChunkRow {
+  slug: string;
+  chunk_index: number;
+  chunk_text: string;
+  chunk_source: 'compiled_truth' | 'timeline';
+  model: string | null;
+  token_count: number | null;
+}
+
 export interface ChunkInput {
   chunk_index: number;
   chunk_text: string;

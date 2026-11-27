@@ -5,7 +5,7 @@ import { runMigrations } from './migrate.ts';
 import { SCHEMA_SQL } from './schema-embedded.ts';
 import type {
   Page, PageInput, PageFilters, PageType,
-  Chunk, ChunkInput,
+  Chunk, ChunkInput, StaleChunkRow,
   SearchResult, SearchOpts,
   Link, GraphNode, GraphPath,
   TimelineEntry, TimelineInput, TimelineOpts,
@@ -350,13 +350,41 @@ export class PostgresEngine implements BrainEngine {
 
   async getChunks(slug: string): Promise<Chunk[]> {
     const sql = this.sql;
+    // Explicit column list: never ship the embedding vector (rowToChunk
+    // discards it anyway). getChunksWithEmbeddings() is the vector reader.
     const rows = await sql`
-      SELECT cc.* FROM content_chunks cc
+      SELECT cc.id, cc.page_id, cc.chunk_index, cc.chunk_text, cc.chunk_source,
+             cc.model, cc.token_count, cc.embedded_at
+      FROM content_chunks cc
       JOIN pages p ON p.id = cc.page_id
       WHERE p.slug = ${slug}
       ORDER BY cc.chunk_index
     `;
     return rows.map((r) => rowToChunk(r as Record<string, unknown>));
+  }
+
+  async countStaleChunks(): Promise<number> {
+    const sql = this.sql;
+    const [row] = await sql`
+      SELECT count(*)::int AS count
+      FROM content_chunks
+      WHERE embedding IS NULL
+    `;
+    return Number((row as { count?: number } | undefined)?.count ?? 0);
+  }
+
+  async listStaleChunks(): Promise<StaleChunkRow[]> {
+    const sql = this.sql;
+    const rows = await sql`
+      SELECT p.slug, cc.chunk_index, cc.chunk_text, cc.chunk_source,
+             cc.model, cc.token_count
+      FROM content_chunks cc
+      JOIN pages p ON p.id = cc.page_id
+      WHERE cc.embedding IS NULL
+      ORDER BY p.id, cc.chunk_index
+      LIMIT 100000
+    `;
+    return rows as unknown as StaleChunkRow[];
   }
 
   async deleteChunks(slug: string): Promise<void> {
